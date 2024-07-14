@@ -8,7 +8,10 @@ import stockroute from './routes/stocks.js';
 
 const app = express();
 
-app.use(cors());
+app.use(cors({
+    origin: 'https://stock-manager-six.vercel.app/', // Use the client origin from environment variables
+    credentials: true // Allow credentials (cookies) to be sent
+}));
 
 dotenv.config();
 
