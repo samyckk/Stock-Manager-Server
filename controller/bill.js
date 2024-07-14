@@ -8,32 +8,41 @@ export const storeBill = async (req, res) => {
         const newrecipt = new Recipt(req.body);
         const profits = [];
 
-        const updatePromises = newrecipt.items.map(async (it, index) => {
+        // Check stock for all items before making updates
+        for (let i = 0; i < newrecipt.items.length; i++) {
+            const it = newrecipt.items[i];
             const stockItem = await Stock.findOne({ item: it });
-            if (stockItem) {
-                const newWeight = stockItem.weight - newrecipt.weights[index];
-                const profit = newrecipt.weights[index] * (newrecipt.rates[index]-stockItem.purchase);
-                console.log(profit);
-                profits.push(profit);
 
-                const updatedStock = await Stock.findOneAndUpdate(
-                    { item: it },
-                    { $set: { weight: newWeight } },
-                    { new: true }
-                );
-
-                
-            }
-            else{
+            if (!stockItem) {
                 return res.status(404).json("Out of Stock");
             }
+
+            const newWeight = stockItem.weight - newrecipt.weights[i];
+
+            if (newWeight < 0) {
+                return res.status(404).json("Out of Stock");
+            }
+
+            const profit = newrecipt.weights[i] * (newrecipt.rates[i] - stockItem.purchase);
+            profits.push(profit);
+        }
+
+        // Proceed with updating stock and saving the receipt
+        const updatePromises = newrecipt.items.map(async (it, index) => {
+            const newWeight = stockItem.weight - newrecipt.weights[index];
+
+            const updatedStock = await Stock.findOneAndUpdate(
+                { item: it },
+                { $set: { weight: newWeight } },
+                { new: true }
+            );
         });
 
         await Promise.all(updatePromises);
 
         newrecipt.profits = profits;     
         await newrecipt.save();
-        
+
         return res.status(200).json(newrecipt);
         
     } catch (err) {
