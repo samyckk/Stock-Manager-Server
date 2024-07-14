@@ -47,7 +47,7 @@ export const storeBill = async (req, res) => {
         
     } catch (err) {
         console.error(err); // Log the error for debugging purposes
-        return res.status(500).json({ message: "error in storing bill" });
+        return res.status(500).json("error in storing bill");
     }
 };
 
